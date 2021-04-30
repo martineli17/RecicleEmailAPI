@@ -47,6 +47,8 @@ namespace Email.API
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddAutoMapper(typeof(EmailMapper).Assembly);
             services.AddScoped<IAutenticacao, Autenticacao>();
+            services.AddHostedService<EmailBackgroundService>();
+            services.AddSingleton<IEmailRabbitObservable, EmailRabbitObservable>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

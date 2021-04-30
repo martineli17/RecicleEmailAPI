@@ -4,6 +4,6 @@ namespace Aplicacao.Contratos
 {
     public interface INetMailService
     {
-        Task<bool> Enviar(EmailDTO email);
+        bool Enviar(EmailDTO email);
     }
 }

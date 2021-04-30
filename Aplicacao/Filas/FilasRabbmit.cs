@@ -1,7 +1,8 @@
 ﻿namespace Aplicacao.Filas
 {
-    public enum FilasRabbmit
+    public static class FilasRabbit
     {
-        Email = 1,
+        public const string EMAIL_ENVIAR = "EmailEnviar";
+        public const string EMAIL_ENVIADOS_COLETA = "EmailEnviadosColeta";
     }
 }

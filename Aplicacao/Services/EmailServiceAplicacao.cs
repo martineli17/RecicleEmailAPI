@@ -3,6 +3,7 @@ using Aplicacao.DTO;
 using Aplicacao.Filas;
 using Dominio.Contratos.Services;
 using Dominio.Entidades;
+using System;
 using System.Threading.Tasks;
 namespace Aplicacao.Services
 {
@@ -13,15 +14,19 @@ namespace Aplicacao.Services
         {
             _emailService = emailService;
         }
-        public async Task<bool> Enviar(EmailDTO email)
+        public Task<bool> Enviar(EmailDTO email)
        {
-            var result = true;
             var entity = base.Injector.Mapper.Map<Email>(email);
-            if (result && !await _emailService.AddAsync(entity)) result = false;
-            if (result && !await base.Injector.NetMailService.Enviar(email)) result = false;
-            if(result) await base.Injector.Rabbit.Producer(email, FilasRabbmit.Email.ToString());
-            if (!result) await _emailService.RemoveAsync(entity.Id);
-            return result;
+            base.Injector.Rabbit.Producer(email, FilasRabbit.EMAIL_ENVIADOS_COLETA);
+            _emailService.AddAsync(entity);
+            base.Injector.NetMailService.Enviar(email);
+            return Task.FromResult(true);
         }
+
+        public void OnCompleted() => throw new NotImplementedException();
+
+        public void OnError(Exception error) => throw new NotImplementedException();
+
+        public void OnNext(EmailDTO value) => Enviar(value).Wait();
     }
 }

@@ -3,6 +3,7 @@ using Aplicacao.Contratos;
 using Crosscuting.Funcoes;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 using System;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +17,14 @@ namespace Aplicacao.RabbitMq
         {
             _channel = CreateConnection(configuration?.Value?.RabbitMq);
         }
+        public Rabbit(string connection)
+        {
+            _channel = CreateConnection(connection);
+        }
+        public Rabbit()
+        {
+
+        }
 
         public IModel CreateConnection(string connectionString)
         {
@@ -23,17 +32,33 @@ namespace Aplicacao.RabbitMq
             var connection = factory.CreateConnection();
             return connection.CreateModel();
         }
-        public ResponseQueue CreateQueue(string fila, IModel channel)
-         => new ResponseQueue(channel.QueueDeclare(queue: fila,
+        public Task<ResponseQueue> CreateQueue(string fila, IModel channel = null)
+        {
+            var canalEscolhido = channel ?? _channel;
+            return Task.FromResult(new ResponseQueue(canalEscolhido.QueueDeclare(queue: fila,
                                   durable: true,
                                   exclusive: false,
                                   autoDelete: false,
-                                  arguments: null));
-        public Task Producer(object request, string fila, IModel channel = null)
+                                  arguments: null)));
+        }
+        
+        public async Task Producer(object request, string fila, IModel channel = null, bool criarQueue = false)
         {
             var canalEscolhido = channel ?? _channel;
-            CreateQueue(fila, canalEscolhido);
+            if(criarQueue) await CreateQueue(fila, canalEscolhido);
             canalEscolhido.BasicPublish(string.Empty, fila, null, Encoding.UTF8.GetBytes(JsonFunc.SerializeObject(request)));
+        }
+
+        public Task Consumer(Action<ResponseRabbitMQ> action, string fila, IModel channel = null)
+        {
+            var canalEscolhido = channel ?? _channel;
+            var consumer = new EventingBasicConsumer(_channel);
+            consumer.Received += (sender, events) =>
+            {
+                action.Invoke(new ResponseRabbitMQ(events));
+                canalEscolhido.BasicAck(events.DeliveryTag, false);
+            };
+            canalEscolhido.BasicConsume(fila, false, consumer);
             return Task.FromResult(0);
         }
     }
