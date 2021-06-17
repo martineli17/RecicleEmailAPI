@@ -1,7 +1,5 @@
-﻿using Aplicacao.Binds;
-using Aplicacao.Contratos;
+﻿using Aplicacao.Contratos;
 using Crosscuting.Funcoes;
-using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
@@ -12,54 +10,60 @@ namespace Aplicacao.RabbitMq
 {
     public class Rabbit : IRabbit
     {
-        private IModel _channel;
-        public Rabbit(IOptions<ConnectionStrings> configuration)
-        {
-            _channel = CreateConnection(configuration?.Value?.RabbitMq);
-        }
+        private IConnection _connection;
         public Rabbit(string connection)
         {
-            _channel = CreateConnection(connection);
+            _connection = CreateConnection(connection);
         }
-        public Rabbit()
+      
+        public Task<ResponseQueue> CreateQueue(string fila)
         {
-
-        }
-
-        public IModel CreateConnection(string connectionString)
-        {
-            var factory = new ConnectionFactory { Uri = new Uri(connectionString) };
-            var connection = factory.CreateConnection();
-            return connection.CreateModel();
-        }
-        public Task<ResponseQueue> CreateQueue(string fila, IModel channel = null)
-        {
-            var canalEscolhido = channel ?? _channel;
-            return Task.FromResult(new ResponseQueue(canalEscolhido.QueueDeclare(queue: fila,
+            var canalEscolhido = _connection.CreateModel();
+            var queueCriada = new ResponseQueue(canalEscolhido.QueueDeclare(queue: fila,
                                   durable: true,
                                   exclusive: false,
                                   autoDelete: false,
-                                  arguments: null)));
+                                  arguments: null));
+            canalEscolhido.Dispose();
+            return Task.FromResult(queueCriada);
         }
-        
-        public async Task Producer(object request, string fila, IModel channel = null, bool criarQueue = false)
+
+        public Task Producer(object request, string fila)
         {
-            var canalEscolhido = channel ?? _channel;
-            if(criarQueue) await CreateQueue(fila, canalEscolhido);
+            var canalEscolhido = _connection.CreateModel();
             canalEscolhido.BasicPublish(string.Empty, fila, null, Encoding.UTF8.GetBytes(JsonFunc.SerializeObject(request)));
+            canalEscolhido.Dispose();
+            return Task.CompletedTask;
         }
 
         public Task Consumer(Action<ResponseRabbitMQ> action, string fila, IModel channel = null)
         {
-            var canalEscolhido = channel ?? _channel;
-            var consumer = new EventingBasicConsumer(_channel);
-            consumer.Received += (sender, events) =>
+            var canalEscolhido = channel ?? _connection.CreateModel();
+            var consumer = new EventingBasicConsumer(canalEscolhido);
+            consumer.Received += (sender, events) => HandlerRecebimento(action, canalEscolhido, sender, events);
+            canalEscolhido.BasicConsume(fila, false, consumer);
+            return Task.CompletedTask;
+        }
+
+        private void HandlerRecebimento(Action<ResponseRabbitMQ> action, IModel canal, 
+                                        object value, BasicDeliverEventArgs events)
+        {
+            try
             {
                 action.Invoke(new ResponseRabbitMQ(events));
-                canalEscolhido.BasicAck(events.DeliveryTag, false);
-            };
-            canalEscolhido.BasicConsume(fila, false, consumer);
-            return Task.FromResult(0);
+                canal.BasicAck(events.DeliveryTag, false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                canal.BasicNack(events.DeliveryTag, true, true);
+            }
+        }
+
+        private IConnection CreateConnection(string connectionString)
+        {
+            var factory = new ConnectionFactory { Uri = new Uri(connectionString) };
+            return factory.CreateConnection();
         }
     }
 }

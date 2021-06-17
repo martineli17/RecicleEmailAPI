@@ -7,12 +7,10 @@ namespace Aplicacao.Services
     {
         public readonly INetMailService NetMailService;
         public readonly IRabbit Rabbit;
-        public readonly IMapper Mapper;
-        public InjectorAplicacao(IRabbit rabbit, INetMailService netMailService, IMapper mapper)
+        public InjectorAplicacao(IRabbit rabbit, INetMailService netMailService)
         {
             Rabbit = rabbit;
             NetMailService = netMailService;
-            Mapper = mapper;
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using Aplicacao.DTO;
-using Dominio.Entidades;
 using System;
 using System.Threading.Tasks;
 

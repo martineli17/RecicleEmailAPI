@@ -1,6 +1,5 @@
 ﻿using Aplicacao.Contratos;
 using Aplicacao.DTO;
-using Dominio.Entidades;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

@@ -6,9 +6,8 @@ namespace Aplicacao.Contratos
 {
     public interface IRabbit
     {
-        IModel CreateConnection(string connectionString);
-        Task<ResponseQueue> CreateQueue(string fila, IModel channel = null);
-        Task Producer(object request, string fila, IModel channel = null, bool criarQueue = false);
+        Task<ResponseQueue> CreateQueue(string fila);
+        Task Producer(object request, string fila);
         Task Consumer(Action<ResponseRabbitMQ> action, string fila, IModel channel = null);
     }
 }

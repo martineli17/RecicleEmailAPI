@@ -12,10 +12,10 @@ namespace Aplicacao.NetMail
     {
         NetMailSettings _configuration;
         private readonly string _origem;
-        public NetMailService(IOptions<NetMailSettings> configuration)
+        public NetMailService(NetMailSettings configuration)
         {
             if (configuration is null) throw new System.Exception("Configurações de e-mail estão nulas.");
-            _configuration = configuration.Value;
+            _configuration = configuration;
             _origem = _configuration.Origem;
         }
 

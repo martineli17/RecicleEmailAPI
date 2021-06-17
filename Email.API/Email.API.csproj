@@ -20,7 +20,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Aplicacao\Aplicacao.csproj" />
-    <ProjectReference Include="..\Repository\Repository.csproj" />
   </ItemGroup>
 
 

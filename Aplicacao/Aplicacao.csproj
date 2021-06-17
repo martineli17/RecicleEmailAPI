@@ -17,8 +17,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Crosscuting\Crosscuting.csproj" />
-    <ProjectReference Include="..\Dominio\Dominio.csproj" />
-    <ProjectReference Include="..\Service\Service.csproj" />
   </ItemGroup>
 
 </Project>

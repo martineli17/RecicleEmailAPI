@@ -1,42 +1,26 @@
-﻿using Aplicacao.Binds;
-using Aplicacao.Contratos;
+﻿using Aplicacao.Contratos;
 using Aplicacao.DTO;
 using Aplicacao.Filas;
-using Aplicacao.Mappers;
-using Aplicacao.NetMail;
-using Aplicacao.RabbitMq;
 using Crosscuting.Funcoes;
-using Dominio.Contratos.Repositorios;
-using Dominio.Contratos.Services;
-using Dominio.Contratos.UnitOfWork;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Repository;
-using Repository.Repositorios;
-using Service;
-using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Aplicacao.Services
+namespace Email.API.Core
 {
     public class EmailBackgroundService : BackgroundService
     {
         private readonly IEmailRabbitObservable _observaleEmail;
         private readonly IRabbit _rabbit;
         private readonly IEmailServiceAplicacao _emailService;
-        public EmailBackgroundService(IOptions<ConnectionStrings> optionsConnection, IOptions<NetMailSettings> optionsEmail)
+        public EmailBackgroundService(IEmailServiceAplicacao emailService,
+                                    IEmailRabbitObservable observaleEmail,
+                                    IRabbit rabbit)
         {
-            
-            IServiceProvider provider = ServiceProviderEmailFactory.Create(optionsConnection, optionsEmail);
-            _rabbit = (IRabbit)provider.GetService(typeof(IRabbit));
-            _emailService = (IEmailServiceAplicacao)provider.GetService(typeof(IEmailServiceAplicacao));
-            _observaleEmail = (IEmailRabbitObservable)provider.GetService(typeof(IEmailRabbitObservable));
+            _emailService = emailService;
+            _observaleEmail = observaleEmail;
+            _rabbit = rabbit;
             _observaleEmail.Subscribe(_emailService);
         }
 
